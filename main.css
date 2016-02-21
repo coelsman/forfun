@@ -233,6 +233,21 @@ hr {
 	float: right;
 	padding: 15px;
 }
+#snooker .wrap_left .wrap_time {
+	margin-bottom: 16px;
+}
+#snooker .wrap_left .wrap_time > div {
+	width: 50%;
+	float: left;
+	padding-right: 30px;
+	padding-left: 8px;
+}
+#snooker .wrap_left .wrap_time .title {
+	font-size: 24px;
+}
+#snooker .wrap_left .wrap_time .value {
+	font-size: 24px;
+}
 #snooker .wrap_left .board {}
 #snooker .wrap_left .board .row {
 	margin-bottom: 14px;
@@ -261,6 +276,13 @@ hr {
 }
 #snooker .wrap_left .board .row_frame {
 
+}
+#snooker .wrap_left .board .row_player .player.select {
+	background-color: #fed;
+}
+#snooker .wrap_left .board .row_player .player:hover {
+	background-color: #def;
+	cursor: pointer;
 }
 #snooker .wrap_left .board .row_point {}
 #snooker .wrap_left .board .row_frame .player {

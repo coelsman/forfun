@@ -337,10 +337,16 @@ hr {
 #snooker .wrap_right .wrap_ball {}
 #snooker .wrap_right .wrap_ball > div {
 	margin-bottom: 5px;
+	cursor: not-allowed;
 }
 #snooker .wrap_right .wrap_ball > div:hover {
-	cursor: pointer;
 	background-color: #eee;
+}
+#snooker .wrap_right .wrap_ball > div.active:hover {
+	cursor: pointer;
+}
+#snooker .wrap_right .wrap_ball > div.active .ball {
+	opacity: 1;
 }
 #snooker .wrap_right .wrap_ball .ball {
 	width: 50px; height: 50px;
@@ -351,6 +357,7 @@ hr {
 	float: left;
 	color: #fff;
 	box-shadow: inset 8px -16px 46px rgba(0,0,0,.5);
+	opacity: 0.5;
 }
 #snooker .wrap_right .wrap_ball .ball[v="1"] {
 	background-color: #ff4f4f;

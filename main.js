@@ -50,6 +50,7 @@ var leftElement = snookerPage.find('.wrap_left'),
 		consecutive = [null, 0, 0],
 		nowPlayer,
 		ballsControl = [null, 15, 1, 1, 1, 1, 1, 1],
+		ballsActive = 'red',
 		isStart = false, isFrame = false, isWrongShot = false,
 		matchTime = 0, frameTime = 0,
 		handleIntervalMatch, handleIntervalFrame;
@@ -74,10 +75,13 @@ leftElement.find('.dropdown select').on('change', function () {
 leftElement.find('.row_player .player').on('click', function () {
 	var next = parseInt($(this).attr('p'));
 	if (isStart && isFrame && next != nowPlayer) {
+		handleTimeline();
 		consecutive[nowPlayer] = 0;
 		nowPlayer = next;
 		leftElement.find('.row_player .player').removeClass('select');
 		$(this).addClass('select');
+		ballsActive = 'red';
+		handleBall();
 	}
 });
 
@@ -105,9 +109,11 @@ rightElement.find('.btn_end_frame').on('click', function () {
 
 rightElement.find('.wrap_ball > div').on('click', function () {
 	var p = parseInt($(this).find('.ball').attr('v'));
-	if (isFrame && isStart) {
-		points[nowPlayer] += p;
-		consecutive[nowPlayer] += p;
+	if (isFrame && isStart && ballsControl[p] > 0) {
+		ballsActive = (ballsActive == 'red') ? 'other' : 'red';
+		points[nowPlayer] = points[nowPlayer] + p;
+		consecutive[nowPlayer] = consecutive[nowPlayer] + p;
+		handleBall(p);
 		handlePoint();
 	}
 });
@@ -155,7 +161,7 @@ function handleTime () {
 				matchTime++;
 				var h = Math.floor(matchTime/3600), m = Math.floor(matchTime/60), s = matchTime%60;
 				timeElement.find('.match .value').html(('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s).slice(-2));
-			}, 1);
+			}, 1000);
 	} else {
 		clearInterval(handleIntervalMatch);
 		clearInterval(handleIntervalFrame);
@@ -169,16 +175,60 @@ function handleTime () {
 				frameTime++;
 				var m = Math.floor(frameTime/60), s = frameTime%60;
 				timeElement.find('.frame .value').html(('0'+m).slice(-2) + ':' + ('0'+s).slice(-2));
-			}, 150);
+			}, 1000);
 	} else {
 		clearInterval(handleIntervalFrame);
 		handleIntervalFrame = undefined;
 		frameTime = 0;
+		points = [null, 0, 0];
+		consecutive = [null, 0, 0];
+		ballsControl = [null, 15, 1, 1, 1, 1, 1, 1];
 	}
 }
 
 function handlePoint () {
 	leftElement.find('.row_point .player-'+nowPlayer).html(points[nowPlayer] + ' (' + consecutive[nowPlayer] + ')');
+}
+
+function handleBall (p) {
+	rightElement.find('.wrap_ball > div').removeClass('active');
+
+	if (p) {
+		if (p == 1) {
+			ballsControl[p]--;
+			if (ballsControl[p] == 0) {
+				ballsActive = 'other';
+			}
+		}
+		updateBallQuantity();
+	}
+
+	if (ballsActive == 'red')
+		rightElement.find('.wrap_ball > div:nth-child(2)').addClass('active');
+	else {
+		rightElement.find('.wrap_ball > div').addClass('active');
+		rightElement.find('.wrap_ball > div:nth-child(2)').removeClass('active');
+	}
+	rightElement.find('.wrap_ball > div:first-child').addClass('active');
+}
+
+function updateBallQuantity () {
+	rightElement.find('.wrap_ball > div').each(function (idx, ele) {
+		if (!$(this).hasClass('cue')) {
+			var v = parseInt($(this).find('.ball').attr('v'));
+			$(this).find('.quantity').html(ballsControl[v]);
+		}
+	});
+}
+
+function handleTimeline () {
+	var op = (nowPlayer == 2) ? 1 : 2;
+	console.warn(nowPlayer);
+	console.warn(op);
+	if (consecutive[nowPlayer] > 0) {
+		leftElement.find('.timeline .frame .player-'+nowPlayer+' .list').append('<span class="p">'+consecutive[nowPlayer]+'</span>');
+		leftElement.find('.timeline .frame .player-'+op+' .list').append('<span>...</span>');
+	}
 }
 
 }

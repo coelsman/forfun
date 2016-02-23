@@ -49,9 +49,9 @@ var leftElement = snookerPage.find('.wrap_left'),
 		points = [null, 0, 0],
 		consecutive = [null, 0, 0],
 		nowPlayer,
-		ballsControl = [null, 15, 1, 1, 1, 1, 1, 1],
+		ballsControl = [null, 2, 1, 1, 1, 1, 1, 1],
 		ballsActive = 'red',
-		isStart = false, isFrame = false, isWrongShot = false,
+		isStart = false, isFrame = false, isWrongShot = false, isLastSix = false, lastColorAfterRed = false,
 		matchTime = 0, frameTime = 0,
 		handleIntervalMatch, handleIntervalFrame;
 
@@ -80,8 +80,15 @@ leftElement.find('.row_player .player').on('click', function () {
 		nowPlayer = next;
 		leftElement.find('.row_player .player').removeClass('select');
 		$(this).addClass('select');
-		ballsActive = 'red';
+
+		if (lastColorAfterRed || isLastSix) {
+			lastColorAfterRed = false;
+			isLastSix = true;
+		} else
+			ballsActive = 'red';
+
 		handleBall();
+		lastSixBall();
 	}
 });
 
@@ -99,6 +106,7 @@ rightElement.find('.btn_wrong_shot').on('click', function () {
 	if (isStart && isFrame)
 		isWrongShot = (isWrongShot) ? false : true;
 	handleButton();
+	lastSixBall();
 });
 
 rightElement.find('.btn_end_frame').on('click', function () {
@@ -109,16 +117,28 @@ rightElement.find('.btn_end_frame').on('click', function () {
 
 rightElement.find('.wrap_ball > div').on('click', function () {
 	var p = parseInt($(this).find('.ball').attr('v'));
-	if (isFrame && isStart && ballsControl[p] > 0) {
-		ballsActive = (ballsActive == 'red') ? 'other' : 'red';
+	if (isFrame && isStart && ballsControl[p] > 0 && nowPlayer && $(this).hasClass('active')) {
+		if (lastColorAfterRed) {
+			lastColorAfterRed = false;
+			handleBall(p);
+			isLastSix = true;
+			lastSixBall();
+		} else if (isLastSix) {
+			handleBall(p);
+			lastSixBall();
+		} else {
+			ballsActive = (ballsActive == 'red') ? 'other' : 'red';
+			handleBall(p);
+		}
+
 		points[nowPlayer] = points[nowPlayer] + p;
 		consecutive[nowPlayer] = consecutive[nowPlayer] + p;
-		handleBall(p);
 		handlePoint();
 	}
 });
 
 function initialize () {
+	console.info('initialize()');
 	leftElement.find('.row_player .player').each(function (id, ele) {
 		$(this).find('name').html('Unknown Player');
 		$(this).find('img').attr('src', '');
@@ -130,6 +150,7 @@ function initialize () {
 }
 
 function handleButton () {
+	console.info('handleButton()');
 	rightElement.find('.ot > div').addClass('disable');
 	rightElement.find('.btn_end_game').removeClass('disable');
 	var w = (isWrongShot) ? 'Wrong Shot' : 'Good Shot';
@@ -146,6 +167,7 @@ function handleButton () {
 		rightElement.find('.btn_end_frame').html('Start Frame');
 		nowPlayer = undefined;
 		leftElement.find('.row_player .player').removeClass('select');
+		leftElement.find('.timeline .frame .player .list').html('');
 	}	else {
 		rightElement.find('.btn_wrong_shot').removeClass('disable').html(w);
 		rightElement.find('.btn_end_frame').removeClass('disable').html('End Frame');
@@ -154,6 +176,7 @@ function handleButton () {
 }
 
 function handleTime () {
+	console.info('handleTime()');
 	var timeElement = leftElement.find('.wrap_time');
 	if (isStart) {
 		if (!handleIntervalMatch)
@@ -182,21 +205,30 @@ function handleTime () {
 		frameTime = 0;
 		points = [null, 0, 0];
 		consecutive = [null, 0, 0];
-		ballsControl = [null, 15, 1, 1, 1, 1, 1, 1];
+		ballsControl = [null, 2, 1, 1, 1, 1, 1, 1];
 	}
+	updateBallQuantity();
 }
 
 function handlePoint () {
+	console.info('handlePoint()');
 	leftElement.find('.row_point .player-'+nowPlayer).html(points[nowPlayer] + ' (' + consecutive[nowPlayer] + ')');
 }
 
 function handleBall (p) {
+	console.info('handleBall()');
 	rightElement.find('.wrap_ball > div').removeClass('active');
 
 	if (p) {
+		if (isLastSix) {
+			ballsControl[p] = 0;
+			updateBallQuantity();
+			return;
+		}
 		if (p == 1) {
 			ballsControl[p]--;
 			if (ballsControl[p] == 0) {
+				lastColorAfterRed = true;
 				ballsActive = 'other';
 			}
 		}
@@ -213,6 +245,7 @@ function handleBall (p) {
 }
 
 function updateBallQuantity () {
+	console.info('updateBallQuantity()');
 	rightElement.find('.wrap_ball > div').each(function (idx, ele) {
 		if (!$(this).hasClass('cue')) {
 			var v = parseInt($(this).find('.ball').attr('v'));
@@ -222,12 +255,33 @@ function updateBallQuantity () {
 }
 
 function handleTimeline () {
+	console.info('handleTimeline()');
 	var op = (nowPlayer == 2) ? 1 : 2;
-	console.warn(nowPlayer);
-	console.warn(op);
 	if (consecutive[nowPlayer] > 0) {
 		leftElement.find('.timeline .frame .player-'+nowPlayer+' .list').append('<span class="p">'+consecutive[nowPlayer]+'</span>');
 		leftElement.find('.timeline .frame .player-'+op+' .list').append('<span>...</span>');
+	}
+}
+
+function lastSixBall () {
+	console.info('lastSixBall()');
+	if (isLastSix) {
+		rightElement.find('.wrap_ball > div').removeClass('active');
+		if (isWrongShot) {
+			$.each(ballsControl, function (k, v) {
+				if (v == 1)
+					rightElement.find('.wrap_ball > div:nth-child('+(k+1)+')').addClass('active');
+			});
+		} else {
+			$.each(ballsControl, function (k, v) {
+				console.log(v);
+				if (v == 1) {
+					console.warn(v);
+					rightElement.find('.wrap_ball > div:nth-child('+(k+1)+')').addClass('active');
+					return false;
+				}
+			});
+		}
 	}
 }
 
